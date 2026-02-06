@@ -1,1 +1,24 @@
+#!name=Douyin Switch
+#!desc=Douyin traffic switch between DIRECT and proxy policy with one tap
+#!author=chatgpt
+
+[Proxy Group]
+Douyin = select, DIRECT, 星畅云, 自动选择, 故障转移
+
+[Rule]
+# Douyin and ByteDance ecosystem
+DOMAIN-SUFFIX,douyin.com,Douyin
+DOMAIN-SUFFIX,douyinpic.com,Douyin
+DOMAIN-SUFFIX,amemv.com,Douyin
+DOMAIN-SUFFIX,snssdk.com,Douyin
+DOMAIN-SUFFIX,ixigua.com,Douyin
+DOMAIN-SUFFIX,ixiguaapi.com,Douyin
+DOMAIN-SUFFIX,bytecdn.com,Douyin
+DOMAIN-SUFFIX,byteimg.com,Douyin
+DOMAIN-SUFFIX,bytedance.com,Douyin
+DOMAIN-SUFFIX,zjcdn.com,Douyin
+DOMAIN-SUFFIX,zjbyte.com,Douyin
+DOMAIN-SUFFIX,zijieapi.com,Douyin
+DOMAIN-SUFFIX,zijiecdn.com,Douyin
+DOMAIN-SUFFIX,bdxiguaimg.com,Douyin
 
