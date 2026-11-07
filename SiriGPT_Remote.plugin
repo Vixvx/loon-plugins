@@ -1,0 +1,24 @@
+#!name = Siri → GPT（网络订阅实验版）
+#!desc = 远程订阅 Loon 插件，拦截 Siri 千问的部分请求并试验用 OpenAI API 回答。未经过 Siri 真机验证。
+#!author = SiriGPT Community Prototype
+#!system = iOS,iPadOS
+#!loon_version = 3.5.1(983)
+#!date = 2026-11-07
+#!tag = Siri,ChatGPT,AI,实验
+#!source = ccade384ed54286afa9ed52097f3c150311f90946d03d261d4ffcbb580d29c0e
+#!homepage = https://github.com/Vixvx/loon-plugins
+#!type = normal
+
+[Argument]
+enabled = switch,true,type=boolean,tag=开启 Siri-GPT,desc=关闭后恢复原始千问请求
+api_key = input,"",type=string,tag=OpenAI API Key,desc=仅在本机填写。请勿将含密钥的插件配置分享给他人
+model = select,"gpt-4.1-mini","gpt-4.1",type=string,tag=GPT 模型
+node = input,"",type=string,tag=API 请求策略,desc=可不填以沿用当前分流；如需指定请填现有策略组或节点名
+
+[Script]
+request if ${url} ~= /^https:\/\/prod-yabuli\.qianwen\.com\/v1\/sessions\/responses(?:\?|$)/ && ${request.method} == "POST" then script("https://raw.githubusercontent.com/Vixvx/loon-plugins/main/SiriGPT_Bridge.js", {${api_key}, ${model}, ${node}}) with enable=${enabled}, tag="Siri → GPT 请求桥接", timeout=35, requires_body=true
+# Loon 内手动运行此 Generic Script，可先验证 API Key/网络；不需要触发 Siri。
+generic then script("https://raw.githubusercontent.com/Vixvx/loon-plugins/main/SiriGPT_Bridge.js", {${api_key}, ${model}, ${node}}) with enable=${enabled}, tag="Siri-GPT API 连通测试", timeout=35
+
+[Mitm]
+hostname = prod-yabuli.qianwen.com
