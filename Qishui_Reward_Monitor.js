@@ -1,5 +1,5 @@
 /*
- * Qishui Reward Monitor V1.0.0 — Loon read-only HTTP response / Generic script
+ * Qishui Reward Monitor V1.1.0 — Loon read-only HTTP response / Generic script
  * Source: actual Qishui 21.5.0 HAR sample (2026-11-08)
  * Privacy: never reads request body, headers, URL query, account IDs or tokens.
  * Safety: does not modify traffic or create any outbound requests.
@@ -13,13 +13,22 @@
   var isHttp = typeof $request !== 'undefined' && typeof $response !== 'undefined';
 
   function initial() {
-    return {version: 1, stats: {prepared: 0, serverDone: 0, serverFailed: 0, rewardResponses: 0, confirmedAds: 0}, lastPreparation: {}, lastDone: null, progress: null, events: []};
+    return {version: 1, nextEventId: 0, stats: {prepared: 0, serverDone: 0, serverFailed: 0, rewardResponses: 0, confirmedAds: 0}, lastPreparation: {}, lastDone: null, progress: null, events: []};
   }
   function load() {
     try {
       var raw = $persistentStore.read(KEY);
       var data = raw ? JSON.parse(raw) : null;
-      if (data && data.version === 1 && data.stats && Array.isArray(data.events)) return data;
+      if (data && data.version === 1 && data.stats && Array.isArray(data.events)) {
+        if (typeof data.nextEventId !== 'number' || !isFinite(data.nextEventId)) {
+          data.nextEventId = 0;
+          for (var i = 0; i < data.events.length; i++) {
+            var id = data.events[i] && data.events[i].id;
+            if (typeof id === 'number' && isFinite(id) && id > data.nextEventId) data.nextEventId = id;
+          }
+        }
+        return data;
+      }
     } catch (_) { /* Do not print raw values. */ }
     return initial();
   }
@@ -33,7 +42,8 @@
     return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
   }
   function log(s, type, detail) {
-    var entry = {at: now(), type: type, text: String(detail).slice(0, 180)};
+     s.nextEventId = (typeof s.nextEventId === 'number' ? s.nextEventId : 0) + 1;
+    var entry = {id: s.nextEventId, at: now(), type: type, text: String(detail).slice(0, 180)};
     s.events.push(entry);
     console.log(TAG + entry.at + ' [' + entry.type + '] ' + entry.text);
   }
@@ -242,6 +252,8 @@
     console.log(TAG + '脚本遇到异常；请在 Loon 中检查插件是否更新和 HTTPS 解密是否生效。');
   } finally {
     // Always pass through the original response unchanged; never forge reward or alter headers.
-    $done(isHttp ? {} : undefined);
+    // Generic scripts do not carry a body. Calling $done(undefined) fails on some Loon builds.
+    if (isHttp) $done({});
+    else $done();
   }
 })();
