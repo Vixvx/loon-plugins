@@ -20,6 +20,7 @@
       var raw = $persistentStore.read(KEY);
       var data = raw ? JSON.parse(raw) : null;
       if (data && data.version === 1 && data.stats && Array.isArray(data.events)) {
+        // v1 records do not have IDs; only new events are eligible for cloud sync.
         if (typeof data.nextEventId !== 'number' || !isFinite(data.nextEventId)) {
           data.nextEventId = 0;
           for (var i = 0; i < data.events.length; i++) {
@@ -42,7 +43,7 @@
     return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
   }
   function log(s, type, detail) {
-     s.nextEventId = (typeof s.nextEventId === 'number' ? s.nextEventId : 0) + 1;
+    s.nextEventId = (typeof s.nextEventId === 'number' ? s.nextEventId : 0) + 1;
     var entry = {id: s.nextEventId, at: now(), type: type, text: String(detail).slice(0, 180)};
     s.events.push(entry);
     console.log(TAG + entry.at + ' [' + entry.type + '] ' + entry.text);
@@ -220,6 +221,7 @@
     if (!isHttp) {
       if (action === 'reset') {
         $persistentStore.write(undefined, KEY); // Never erase other scripts' data.
+        $persistentStore.write(undefined, 'Vixvx.QishuiRewardMonitor.gh.v2.last_id'); // Reset cloud cursor with local history.
         console.log(TAG + '仅当前插件的本地统计和事件已清空。');
         notify('本地记录已清空', '不会影响汽水音乐服务器上的任何任务或会员权益。');
       } else report(load());
@@ -252,7 +254,7 @@
     console.log(TAG + '脚本遇到异常；请在 Loon 中检查插件是否更新和 HTTPS 解密是否生效。');
   } finally {
     // Always pass through the original response unchanged; never forge reward or alter headers.
-    // Generic scripts do not carry a body. Calling $done(undefined) fails on some Loon builds.
+    // Loon generic scripts require no argument; passing undefined triggered e.body on some builds.
     if (isHttp) $done({});
     else $done();
   }
