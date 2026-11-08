@@ -1,0 +1,24 @@
+#!name = 汽水音乐 · 广告监控 V2 + GitHub日志
+#!desc = 只读监控真实广告任务进度；可选将脱敏日志同步到用户私有GitHub仓库的Issue评论。默认关闭同步。
+#!author = Vixvx
+#!homepage = https://github.com/Vixvx/loon-plugins
+#!date = 2026-11-08
+#!type = normal
+#!loon_version = 3.5.1(983)
+
+[Argument]
+sync_enabled = switch,false,type=boolean,tag=云端同步,desc=默认关闭；启用后才向你指定的GitHub私有仓库上传脱敏日志
+github_owner = input,"Vixvx",type=string,tag=GitHub用户名
+github_repo = input,type=string,tag=私有日志仓库名,desc=请使用独立的私有仓库，不要写入公开插件仓库
+github_issue = input,1,type=number,tag=日志Issue编号,desc=填私有仓库中已创建的Issue编号
+github_token = input,type=string,tag=限权GitHub Token,desc=仅授予该私有仓库的Issues读写权限；切勿分享含Token的配置
+
+[Script]
+response if ${url} ~= /^https:\/\/(?:api\.qishui\.com|beta-luna\.douyin\.com)\/{1,2}luna\/(?:advert\/(?:incentive\/(?:config|retrieve|done)|fallback\/done\/info)|ads\/(?:config|dsp\/retrieve)|treasure\/task\/page\/v2)(?:\?|$)/ then script("https://raw.githubusercontent.com/Vixvx/loon-plugins/main/Qishui_Reward_Monitor.js") with tag="汽水音乐 · 只读监听", requires_body=true, timeout=20
+cron "*/1 * * * *" then script("https://raw.githubusercontent.com/Vixvx/loon-plugins/main/Qishui_GitHub_Sync.js", {${sync_enabled}, ${github_owner}, ${github_repo}, ${github_issue}, ${github_token}}) with tag="汽水音乐 · 每分钟同步GitHub", enable=${sync_enabled}, timeout=30
+generic then script("https://raw.githubusercontent.com/Vixvx/loon-plugins/main/Qishui_Reward_Monitor.js", "report") with tag="汽水音乐 · 查看脱敏报告", timeout=20
+generic then script("https://raw.githubusercontent.com/Vixvx/loon-plugins/main/Qishui_GitHub_Sync.js", {${sync_enabled}, ${github_owner}, ${github_repo}, ${github_issue}, ${github_token}}) with tag="汽水音乐 · 立即同步GitHub日志", timeout=30
+generic then script("https://raw.githubusercontent.com/Vixvx/loon-plugins/main/Qishui_Reward_Monitor.js", "reset") with tag="汽水音乐 · 清空本地监控记录", timeout=20
+
+[Mitm]
+hostname = api.qishui.com,beta-luna.douyin.com
