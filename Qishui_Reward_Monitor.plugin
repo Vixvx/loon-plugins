@@ -1,0 +1,16 @@
+#!name = 汽水音乐 · 广告任务监控 V1
+#!desc = 只读监控激励广告、奖励响应、会员畅听天数与任务进度；仅保存脱敏日志，不屏蔽、不伪造、不重放。
+#!author = Vixvx
+#!homepage = https://github.com/Vixvx/loon-plugins
+#!date = 2026-11-08
+#!tag = 汽水音乐,任务监控,只读
+#!type = normal
+#!loon_version = 3.5.1(983)
+
+[Script]
+response if ${url} ~= /^https:\/\/(?:api\.qishui\.com|beta-luna\.douyin\.com)\/{1,2}luna\/(?:advert\/(?:incentive\/(?:config|retrieve|done)|fallback\/done\/info)|ads\/(?:config|dsp\/retrieve)|treasure\/task\/page\/v2)(?:\?|$)/ then script("https://raw.githubusercontent.com/Vixvx/loon-plugins/main/Qishui_Reward_Monitor.js") with tag="汽水音乐 · 广告领奖只读监控", requires_body=true, timeout=20
+generic then script("https://raw.githubusercontent.com/Vixvx/loon-plugins/main/Qishui_Reward_Monitor.js", "report") with tag="汽水音乐 · 查看脱敏报告", timeout=20
+generic then script("https://raw.githubusercontent.com/Vixvx/loon-plugins/main/Qishui_Reward_Monitor.js", "reset") with tag="汽水音乐 · 清空本地监控记录", timeout=20
+
+[Mitm]
+hostname = api.qishui.com,beta-luna.douyin.com
