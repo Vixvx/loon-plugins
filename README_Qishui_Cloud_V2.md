@@ -51,3 +51,7 @@ https://raw.githubusercontent.com/Vixvx/loon-plugins/main/Qishui_GitHub_Monitor_
 - `Qishui_GitHub_Monitor_V2.plugin`：Loon 订阅入口。
 - `Qishui_Reward_Monitor.js`：本地只读监控与手动报告，已升级 V1.1。
 - `Qishui_GitHub_Sync.js`：可选的 GitHub Issue 评论同步。
+
+## 安全说明
+
+V2 会在每次上传前核查日志仓库是否为 Private 私有仓库，并强制验证 GitHub HTTPS 证书；检查失败时不会上传日志。请勿把 Token 填写到公开 GitHub 插件源码或分享含 Token 的 Loon 配置文件。
