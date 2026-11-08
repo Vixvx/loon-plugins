@@ -69,30 +69,60 @@
     stats:stats(s),progress:progress(s.progress),events:events};
   var comment='### 汽水音乐 · 脱敏任务日志\n\n同步时间（UTC）：'+payload.synced_at+
     '\n\n'+JSON.stringify(payload,null,2)+'\n\n此记录不包含账号、Cookie、Token 或原始网络流量。';
-  var endpoint='https://api.github.com/repos/'+owner+'/'+repo+'/issues/'+issue+'/comments';
-  try {
-    $httpClient.post({
-      url:endpoint,
-      headers:{
-        'Accept':'application/vnd.github+json',
-        'Authorization':'Bearer '+token,
-        'Content-Type':'application/json',
-        'X-GitHub-Api-Version':'2022-11-28',
-        'User-Agent':'qishui-reward-monitor'
-      },
-      body:JSON.stringify({body:comment})
-    }, function(err,res) {
-      var status=res && Number(res.status);
-      if (!err && status===201) {
-        $persistentStore.write(String(lastInBatch),CURSOR_KEY);
-        log('同步成功：'+events.length+'条；累计任务进度+'+payload.stats.confirmed_progress_increases+'次。');
-      } else {
-        log('同步失败，HTTP '+(isFinite(status)?status:'?')+'；记录保留供下次重试。');
-      }
+  var repoEndpoint='https://api.github.com/repos/'+owner+'/'+repo;
+  var endpoint=repoEndpoint+'/issues/'+issue+'/comments';
+  var authHeaders={
+    'Accept':'application/vnd.github+json',
+    'Authorization':'Bearer '+token,
+    'X-GitHub-Api-Version':'2022-11-28',
+    'User-Agent':'qishui-reward-monitor'
+  };
+  function upload() {
+    try {
+      $httpClient.post({
+        url:endpoint,
+        insecure:false,
+        timeout:12000,
+        headers:{
+          'Accept':authHeaders.Accept,
+          'Authorization':authHeaders.Authorization,
+          'Content-Type':'application/json',
+          'X-GitHub-Api-Version':authHeaders['X-GitHub-Api-Version'],
+          'User-Agent':authHeaders['User-Agent']
+        },
+        body:JSON.stringify({body:comment})
+      }, function(err,res) {
+        var status=res && Number(res.status);
+        if (!err && status===201) {
+          $persistentStore.write(String(lastInBatch),CURSOR_KEY);
+          log('同步成功：'+events.length+'条；累计任务进度+'+payload.stats.confirmed_progress_increases+'次。');
+        } else {
+          log('同步失败，HTTP '+(isFinite(status)?status:'?')+'；记录保留供下次重试。');
+        }
+        finish();
+      });
+    } catch (_) {
+      log('同步请求启动失败，记录保留供下次重试。');
       finish();
+    }
+  }
+  // The source repo is public, but logs must NEVER be sent to any public repo.
+  try {
+    $httpClient.get({
+      url:repoEndpoint,
+      headers:authHeaders,
+      insecure:false,
+      timeout:8000
+    }, function(err,res,body) {
+      var metadata=typeof body==='string'?parse(body):null;
+      if (err || !res || Number(res.status)!==200 || !metadata || metadata.private!==true) {
+        log('未能确认目标仓库是私有仓库，已禁止上传，请检查参数及权限。');
+        finish(); return;
+      }
+      upload();
     });
   } catch (_) {
-    log('同步请求启动失败，记录保留供下次重试。');
+    log('私有仓库检查失败，已禁止上传。');
     finish();
   }
 })();
